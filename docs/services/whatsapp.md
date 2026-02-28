@@ -1,5 +1,8 @@
 # WhatsApp
 
+This service is added here for use mainly in Argo Events but not in Argo CD.
+Maybe in the future its usage will be expanded.
+
 ## Parameters
 
 * `apiURL` - the server url, e.g. https://graph.facebook.com
