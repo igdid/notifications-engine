@@ -244,7 +244,7 @@ func NewService(serviceType string, optsData []byte) (NotificationService, error
 		}
 		return NewNewrelicService(opts), nil
 	case "whatsapp":
-		var opts WhatsappOptions
+		var opts WhatsAppOptions
 		if err := yaml.Unmarshal(optsData, &opts); err != nil {
 			return nil, err
 		}

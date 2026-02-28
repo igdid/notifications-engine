@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	texttemplate "text/template"
 
 	httputil "github.com/argoproj/notifications-engine/pkg/util/http"
 )
@@ -15,6 +14,7 @@ type MessageType string
 
 const (
 	apiVersion string = "v25.0"
+	apiURL string = "https://graph.facebook.com"
 )
 
 const (
@@ -229,16 +229,15 @@ func NewWhatsAppService(opts WhatsAppOptions) NotificationService {
 }
 
 func (m *whatsappService) Send(notification Notification, dest Destination) (err error) {
-	apiURL := "https://graph.facebook.com"
 	client, err := httputil.NewServiceHTTPClient(m.opts.TransportOptions, m.opts.InsecureSkipVerify, apiURL, "whatsapp")
 	if err != nil {
 		return err
 	}
-	var wn WhatsAppNotification
+	var wn *WhatsAppNotification
 	if notification.WhatsApp == nil {
-		wn = NewTextMessage(dest.recipient, notification.Message, true)
+		wn = NewTextMessage(dest.Recipient, notification.Message, true)
 	} else {
-		wn = *notification.WhatsApp
+		wn = notification.WhatsApp
 		if notification.Message != "" {
 			switch wn.Type {
 			case "text":
@@ -248,7 +247,7 @@ func (m *whatsappService) Send(notification Notification, dest Destination) (err
 			case "document":
 				wn.Document.Caption = notification.Message
 			case "interactive":
-				wn.Interactive.Body = notification.Message
+				wn.Interactive.Body.Text = notification.Message
 			case "template":
 				wn.Template.Name = notification.Message
 			default:
@@ -259,8 +258,8 @@ func (m *whatsappService) Send(notification Notification, dest Destination) (err
 
 	b, _ := json.Marshal(wn)
 
-	uri := strings.Sprintf("/%s/%s/messages", apiVersion, m.opts.BusinessPhoneNumber)
-	req, err := http.NewRequest(http.MethodPost, m.opts.ApiURL+uri, bytes.NewReader(b))
+	uri := fmt.Sprintf("/%s/%s/messages", apiVersion, m.opts.BusinessPhoneNumber)
+	req, err := http.NewRequest(http.MethodPost, apiURL+uri, bytes.NewReader(b))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -279,7 +278,7 @@ func (m *whatsappService) Send(notification Notification, dest Destination) (err
 	}
 
 	if res.StatusCode/100 != 2 {
-		return fmt.Errorf("request to %s has failed with error code %d : %s", body, res.StatusCode, string(data))
+		return fmt.Errorf("request to %s has failed with error code %d : %s", string(b), res.StatusCode, string(data))
 	}
 
 	return nil
