@@ -50,3 +50,26 @@ func TestSend_WhatsApp(t *testing.T) {
 	})
 	require.NoError(t, err)
 }
+
+func TestGetTemplater_WhatsApp(t *testing.T) {
+	n := Notification{
+		Message: "{{.message}}",
+		WhatsApp: &WhatsAppNotification{
+			Text: &TextMessage{
+				Body: "old body",
+			},
+		},
+	}
+
+	templater, err := n.GetTemplater("", template.FuncMap{})
+	require.NoError(t, err)
+
+	var notification Notification
+
+	err = templater(&notification, map[string]any{
+		"message": "abcdef",
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "abcdef", notification.Message)
+}

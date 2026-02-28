@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	texttemplate "text/template"
 
 	httputil "github.com/argoproj/notifications-engine/pkg/util/http"
 )
@@ -14,7 +15,6 @@ type MessageType string
 
 const (
 	apiVersion string = "v25.0"
-	apiURL string = "https://graph.facebook.com"
 )
 
 const (
@@ -34,6 +34,12 @@ type WhatsAppNotification struct {
 	Document         *DocumentMessage `json:"document,omitempty"`
 	Interactive      *Interactive     `json:"interactive,omitempty"`
 	Template         *TemplateMessage `json:"template,omitempty"`
+}
+
+func (n *WhatsAppNotification) GetTemplater(_ string, _ texttemplate.FuncMap) (Templater, error) {
+	return func(_ *Notification, _ map[string]any) error {
+		return nil
+	}, nil
 }
 
 type TextMessage struct {
@@ -185,7 +191,6 @@ func NewTemplateWithBodyParams(
 	to, name, lang string,
 	params ...string,
 ) *WhatsAppNotification {
-
 	parameters := make([]TemplateParameter, len(params))
 	for i, p := range params {
 		parameters[i] = TemplateParameter{
@@ -216,6 +221,7 @@ func NewTemplateWithBodyParams(
 type WhatsAppOptions struct {
 	BusinessPhoneNumber string `json:"businessPhoneNumber"`
 	Token               string `json:"token"`
+	ApiURL              string `json:"apiUrl"`
 	InsecureSkipVerify  bool   `json:"insecureSkipVerify"`
 	httputil.TransportOptions
 }
@@ -229,7 +235,7 @@ func NewWhatsAppService(opts WhatsAppOptions) NotificationService {
 }
 
 func (m *whatsappService) Send(notification Notification, dest Destination) (err error) {
-	client, err := httputil.NewServiceHTTPClient(m.opts.TransportOptions, m.opts.InsecureSkipVerify, apiURL, "whatsapp")
+	client, err := httputil.NewServiceHTTPClient(m.opts.TransportOptions, m.opts.InsecureSkipVerify, m.opts.ApiURL, "whatsapp")
 	if err != nil {
 		return err
 	}
@@ -251,7 +257,7 @@ func (m *whatsappService) Send(notification Notification, dest Destination) (err
 			case "template":
 				wn.Template.Name = notification.Message
 			default:
-				return fmt.Errorf("Unknown type: %s", wn.Type)
+				return fmt.Errorf("unknown type: %s", wn.Type)
 			}
 		}
 	}
@@ -259,7 +265,7 @@ func (m *whatsappService) Send(notification Notification, dest Destination) (err
 	b, _ := json.Marshal(wn)
 
 	uri := fmt.Sprintf("/%s/%s/messages", apiVersion, m.opts.BusinessPhoneNumber)
-	req, err := http.NewRequest(http.MethodPost, apiURL+uri, bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPost, m.opts.ApiURL+uri, bytes.NewReader(b))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
