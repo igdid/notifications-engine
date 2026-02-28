@@ -243,7 +243,7 @@ func (m *whatsappService) Send(notification Notification, dest Destination) (err
 	if notification.WhatsApp == nil {
 		wn = NewTextMessage(dest.Recipient, notification.Message, true)
 	} else {
-		wn = notification.WhatsApp
+		wn = notification.WhatsApp{To: dest.Recipient, MessagingProduct: "whatsapp"}
 		if notification.Message != "" {
 			switch wn.Type {
 			case "text":
