@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	texttemplate "text/template"
 
 	httputil "github.com/argoproj/notifications-engine/pkg/util/http"
@@ -297,11 +298,11 @@ func NewTemplateWithBodyParams(
 }
 
 type WhatsAppOptions struct {
-	BusinessPhoneNumber string `json:"businessPhoneNumber"`
-	Token               string `json:"token"`
-	ApiURL              string `json:"apiURL"`
-	ApiVersion          string `json:"apiVersion"`
-	InsecureSkipVerify  bool   `json:"insecureSkipVerify"`
+	PhoneNumberID      string `json:"phoneNumberID"`
+	Token              string `json:"token"`
+	ApiURL             string `json:"apiURL"`
+	ApiVersion         string `json:"apiVersion"`
+	InsecureSkipVerify bool   `json:"insecureSkipVerify"`
 	httputil.TransportOptions
 }
 
@@ -319,20 +320,21 @@ func (w *whatsappService) Send(notification Notification, dest Destination) (err
 		return err
 	}
 	var wn *WhatsAppNotification
+	recipient := strings.TrimLeft(dest.Recipient, "+")
 	if notification.WhatsApp == nil {
-		wn = NewTextMessage(dest.Recipient, notification.Message, true)
+		wn = NewTextMessage(recipient, notification.Message, true)
 	} else {
 		switch notification.WhatsApp.Type {
 		case "text":
-			wn = NewTextMessage(dest.Recipient, notification.Message, notification.WhatsApp.Text.PreviewURL)
+			wn = NewTextMessage(recipient, notification.Message, notification.WhatsApp.Text.PreviewURL)
 		case "image":
-			wn = NewImageMessageByURL(dest.Recipient, notification.WhatsApp.Image.Link, notification.Message)
+			wn = NewImageMessageByURL(recipient, notification.WhatsApp.Image.Link, notification.Message)
 		case "document":
-			wn = NewDocumentMessageByURL(dest.Recipient, notification.WhatsApp.Document.Link, notification.WhatsApp.Document.Filename, notification.Message)
+			wn = NewDocumentMessageByURL(recipient, notification.WhatsApp.Document.Link, notification.WhatsApp.Document.Filename, notification.Message)
 		case "interactive":
-			wn = NewButtonMessage(dest.Recipient, notification.Message, notification.WhatsApp.Interactive.Action.Buttons)
+			wn = NewButtonMessage(recipient, notification.Message, notification.WhatsApp.Interactive.Action.Buttons)
 		case "template":
-			wn = NewTemplate(dest.Recipient, notification.Message, notification.WhatsApp.Template.Language.Code, notification.WhatsApp.Template.Components)
+			wn = NewTemplate(recipient, notification.Message, notification.WhatsApp.Template.Language.Code, notification.WhatsApp.Template.Components)
 		default:
 			return fmt.Errorf("unknown type: %s", notification.WhatsApp.Type)
 		}
@@ -340,7 +342,7 @@ func (w *whatsappService) Send(notification Notification, dest Destination) (err
 
 	b, _ := json.Marshal(wn)
 
-	uri := fmt.Sprintf("/%s/%s/messages", w.opts.ApiVersion, w.opts.BusinessPhoneNumber)
+	uri := fmt.Sprintf("/%s/%s/messages", w.opts.ApiVersion, w.opts.PhoneNumberID)
 	req, err := http.NewRequest(http.MethodPost, w.opts.ApiURL+uri, bytes.NewReader(b))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)

@@ -102,7 +102,7 @@ func TestGetTemplaterIncomplete_WhatsApp(t *testing.T) {
 		WhatsApp: &WhatsAppNotification{
 			Type: "{{.type}}",
 			Document: &DocumentMessage{
-				Link:     "https://example.com/{{.user_id}}.pdf",
+				Link: "https://example.com/{{.user_id}}.pdf",
 			},
 			Image: &ImageMessage{
 				Link: "https://example.com/{{.user_id}}.jpg",
@@ -115,8 +115,8 @@ func TestGetTemplaterIncomplete_WhatsApp(t *testing.T) {
 
 	var notification Notification
 	err = templater(&notification, map[string]any{
-		"type":     "image",
-		"user_id":  "123456",
+		"type":    "image",
+		"user_id": "123456",
 	})
 
 	require.NoError(t, err)
@@ -124,8 +124,8 @@ func TestGetTemplaterIncomplete_WhatsApp(t *testing.T) {
 	assert.Equal(t, TypeImage, notification.WhatsApp.Type)
 	assert.Equal(t, "https://example.com/123456.jpg", notification.WhatsApp.Image.Link)
 	err = templater(&notification, map[string]any{
-		"type":        "document",
-		"user_id":     "123456",
+		"type":    "document",
+		"user_id": "123456",
 	})
 
 	require.NoError(t, err)

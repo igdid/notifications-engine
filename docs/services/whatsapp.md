@@ -1,8 +1,5 @@
 # WhatsApp
 
-This service is added here for use mainly in Argo Events but not in Argo CD.
-Maybe in the future its usage will be expanded.
-
 ## Parameters
 
 * `apiURL` - the server url, e.g. https://graph.facebook.com
@@ -41,4 +38,13 @@ metadata:
   name: <secret-name>
 stringData:
   whatsapp-token: token
+```
+
+3. Use recipient phone number (with or without +) in the subscription for your WhatsApp integration:
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-succeeded.whatsapp: 1XXXXXXXXXX
 ```
