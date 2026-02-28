@@ -110,9 +110,6 @@ func (n *Notification) GetTemplater(name string, f texttemplate.FuncMap) (Templa
 	if n.Newrelic != nil {
 		sources = append(sources, n.Newrelic)
 	}
-	if n.WhatsApp != nil {
-		sources = append(sources, n.WhatsApp)
-	}
 	return n.getTemplater(name, f, sources)
 }
 
