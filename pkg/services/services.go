@@ -30,6 +30,7 @@ type Notification struct {
 	Pagerduty      *PagerDutyNotification      `json:"pagerduty,omitempty"`
 	PagerdutyV2    *PagerDutyV2Notification    `json:"pagerdutyv2,omitempty"`
 	Newrelic       *NewrelicNotification       `json:"newrelic,omitempty"`
+	WhatsApp       *WhatsAppNotification       `json:"whatsapp,omitempty"`
 }
 
 // Destinations holds notification destinations group by trigger
@@ -108,6 +109,9 @@ func (n *Notification) GetTemplater(name string, f texttemplate.FuncMap) (Templa
 	}
 	if n.Newrelic != nil {
 		sources = append(sources, n.Newrelic)
+	}
+	if n.WhatsApp != nil {
+		sources = append(sources, n.WhatsApp)
 	}
 	return n.getTemplater(name, f, sources)
 }
@@ -239,6 +243,12 @@ func NewService(serviceType string, optsData []byte) (NotificationService, error
 			return nil, err
 		}
 		return NewNewrelicService(opts), nil
+	case "whatsapp":
+		var opts WhatsappOptions
+		if err := yaml.Unmarshal(optsData, &opts); err != nil {
+			return nil, err
+		}
+		return NewWhatsAppService(opts), nil
 	case "webex":
 		var opts WebexOptions
 		if err := yaml.Unmarshal(optsData, &opts); err != nil {
